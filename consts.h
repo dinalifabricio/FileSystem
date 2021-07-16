@@ -1,0 +1,5 @@
+#define SECTION_SIZE 512
+#define CLUSTER_SIZE 1024
+#define BOOT_BLOCK_VALUE 0xbb
+#define END_OF_FILE 0xffff
+#define FAT_SIZE 4096
