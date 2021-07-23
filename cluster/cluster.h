@@ -1,13 +1,48 @@
 #include "../consts.h"
 
-typedef struct cluster* Cluster;
+typedef struct dirCluster* DirCluster;
+
+typedef struct dataCluster* DataCluster;
 
 typedef struct dirEntry* DirEntry;
 
-Cluster* clusterReadClusters(int start, int numClusters);
+int clusterGetNumDirs();
 
-int clusterWriteCluster(int start, Cluster dataToWrite);
+//create
+DataCluster clusterCreateDataCluster(uint8_t c_data[CLUSTER_SIZE]);
 
-uint8_t* clusterGetData(Cluster c);
+DirCluster clusterCreateDirCluster(DirEntry* dir, int num_dirs);
 
-Cluster clusterCreate(uint8_t c_data[CLUSTER_SIZE]);
+//get
+uint8_t* clusterGetDataCluster(DataCluster c);
+
+DirEntry* clusterGetDirClusterDir(DirCluster c);
+
+char* clusterGetFileName(DirEntry Entry);
+
+int clusterGetAttributes(DirEntry Entry);
+
+int clusterGetFirstBlock(DirEntry Entry);
+
+int clusterGetSize(DirEntry Entry);
+
+//set
+void clusterSetFileName(DirEntry Entry, char* fileName);
+
+void clusterSetAttributes(DirEntry Entry, int attributtes);
+
+void clusterSetFirstBlock(DirEntry Entry, int first_block);
+
+void clusterSetSize(DirEntry Entry, int size);
+
+
+//read
+DataCluster* clusterReadDataClusters(int start, int numClusters);
+
+DirCluster* clusterReadDirClusters(int start, int numClusters);
+
+//write
+int clusterWriteDataCluster(int start, DataCluster dataToWrite);
+
+int clusterWriteDirCluster(int start, DirCluster dataToWrite);
+

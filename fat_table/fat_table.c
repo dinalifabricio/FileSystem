@@ -3,37 +3,45 @@
 #include <stdint.h>
 #include "fat_table.h"
 #include "../cluster/cluster.h"
-#include "consts.h"
+#include "../consts.h"
 
-struct fatTable
-{
+struct fatTable {
     //8 clusters => 4096 entradas de 16 bites
     uint16_t table[4096];
 };
 
-FatTable fatTableLoad(){
+FatTable fatTableLoad() {
     FatTable F = malloc(sizeof(struct fatTable));
 
-    Cluster* data = clusterReadClusters(1, 8);
-
-    for (size_t i = 0; i < 8; i++){
-        uint8_t* c_data = clusterGetData(data[i]);
-
-        for (size_t j = 0; j < CLUSTER_SIZE; j = j + 2)
-        {
-           fwrite(&c_data[j], sizeof(uint8_t), 2, F->table[i]);
-        }
+    FILE *fat_part = fopen("fat.part", "rb+");
+    
+    if(fat_part == NULL){
+        printf("\n É importante criar um arquivo antes de abri-lo \n");
+        return 0;
     }
+    
+    fseek(fat_part, CLUSTER_SIZE, SEEK_SET);
+
+    fread(F->table, sizeof(uint16_t), FAT_SIZE, fat_part);
+
+    fclose(fat_part);
 
     return F;
 }
 
-void fatTableSave(FatTable ft){  
-    for (size_t i = 0; i < FAT_SIZE; i++){
-        Cluster cluster = createCluster(&ft->table[i]);
-        clusterWriteCluster(i+1, cluster);
-        free(cluster);
-    }    
+int fatTableSave(FatTable ft) {  
+    FILE *fat_part = fopen("fat.part", "rb+");
+    
+    if(fat_part == NULL){
+        printf("\n É importante criar um arquivo antes de abri-lo \n");
+        return -1;
+    }
+
+    fseek(fat_part, CLUSTER_SIZE, SEEK_SET);
+
+    fwrite(ft->table, sizeof(uint16_t), FAT_SIZE, fat_part);
+
+    fclose(fat_part);
 }
 
 
@@ -53,3 +61,12 @@ void fatTableSave(FatTable ft){
 
 //     return b;
 // }
+
+void fatTablePrint(FatTable F){
+    printf("\n DA UM LIGA NESSA FAT TABLE: \n");
+    for (size_t i = 0; i < FAT_SIZE; i++)
+    {
+        printf("\n %x \n", F->table[i]);
+    }
+    
+}
