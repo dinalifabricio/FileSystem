@@ -2,4 +2,6 @@
 #define CLUSTER_SIZE 1024
 #define BOOT_BLOCK_VALUE 0xbb
 #define END_OF_FILE 0xffff
+#define EMPTY_BLOCK 0x0000
 #define FAT_SIZE 4096
+#define FAT_TABLE_SAVE_COUNT 5

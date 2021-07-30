@@ -7,12 +7,6 @@
 /*################################### Estruturas e Inicializações ###########################*/
 
 /* entrada de diretorio, 32 bytes cada */
-#define NUM_DIRS (CLUSTER_SIZE / sizeof(struct dirEntry))
-
-int clusterGetNumDirs(){
-    return NUM_DIRS;
-}
-
 struct dirEntry {
     uint8_t filename[18];
     uint8_t attributes;
@@ -21,10 +15,16 @@ struct dirEntry {
     uint32_t size;
 };
 
+#define NUM_DIRS (CLUSTER_SIZE / sizeof(struct dirEntry))
+
+int clusterGetNumDirs(){
+    return NUM_DIRS;
+}
+
 /* diretorios (incluindo ROOT), 32 entradas de diretorio
 com 32 bytes cada = 1024 bytes ou bloco de dados de 1024 bytes*/
 struct dirCluster{
-    DirEntry dir[NUM_DIRS];
+    struct dirEntry* dirs[NUM_DIRS];
 };
 
 struct dataCluster{
@@ -45,19 +45,24 @@ DirCluster clusterCreateDirCluster(DirEntry* dir, int num_dirs) {
     DirCluster D = malloc(sizeof(struct dirCluster));
 
     for (size_t i = 0; i < num_dirs; i++){
-        D->dir[i] = dir[i];
+        D->dirs[i] = dir[i];
     }
 
     return D;
 
 }
+
 /*################################### Getters ############################*/
+int clusterDirEntrySize(){
+    return sizeof(struct dirEntry);
+}
+
 uint8_t* clusterGetDataCluster(DataCluster c) {
     return c->data;
 }
 
 DirEntry* clusterGetDirClusterDir(DirCluster c) {
-    return c->dir;
+    return c->dirs;
 }
 
 char* clusterGetFileName(DirEntry Entry){
@@ -113,7 +118,7 @@ DataCluster* clusterReadDataClusters(int start, int numClusters) {
     
     fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
 
-    for (size_t i = 0; i < numClusters-start; i++){
+    for (size_t i = start; i < numClusters+start; i++){
         fread(clusters[i]->data, sizeof(uint8_t), CLUSTER_SIZE, fat_part);
     }
 
@@ -130,12 +135,19 @@ DirCluster* clusterReadDirClusters(int start, int numClusters) {
         return 0;
     }
 
-    DirCluster* clusters = malloc(sizeof(struct dirCluster) * numClusters);
-    
     fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
 
-    for (size_t i = 0; i < numClusters-start; i++){
-        fread(clusters[i]->dir, sizeof(struct dirCluster), NUM_DIRS, fat_part);
+    DirCluster* clusters = malloc(sizeof(struct dirCluster) * numClusters);
+    
+    for (int c = 0; c < numClusters; c++){
+        for (size_t directory = 0; directory < NUM_DIRS; directory++){
+            printf("\n dirs: %p\n", clusters[c]->dirs);
+            clusters[c]->dirs[directory] = malloc(sizeof(struct dirEntry) * NUM_DIRS);
+            printf("\n dirs: %p\n", clusters[c]->dirs);
+            
+            fread(clusters[c]->dirs[directory], sizeof(struct dirEntry), 1, fat_part);
+            printf("\n fread deu bom manito \n");
+        }
     }
 
     fclose(fat_part);
@@ -175,7 +187,7 @@ int clusterWriteDirCluster(int start, DirCluster dataToWrite){
 
     fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
 
-    fwrite(dataToWrite->dir, CLUSTER_SIZE, 1, fat_part);
+    fwrite(dataToWrite->dirs, CLUSTER_SIZE, 1, fat_part);
 
     fclose(fat_part);
 

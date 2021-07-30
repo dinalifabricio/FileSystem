@@ -14,6 +14,8 @@ DataCluster clusterCreateDataCluster(uint8_t c_data[CLUSTER_SIZE]);
 DirCluster clusterCreateDirCluster(DirEntry* dir, int num_dirs);
 
 //get
+int clusterDirEntrySize();
+
 uint8_t* clusterGetDataCluster(DataCluster c);
 
 DirEntry* clusterGetDirClusterDir(DirCluster c);

@@ -5,6 +5,7 @@
 #include "fat.h"
 #include "../cluster/cluster.h"
 #include "../utils/utils.h"
+#include "../fat_table/fat_table.h"
 
 /*################################### Estruturas e Inicializações ###########################*/
 
@@ -40,9 +41,9 @@ int initFat(){
 
     //root
     DirEntry root[32];
-    memset(root, 0, 32 * sizeof(DirEntry));
+    memset(root, 0, 32 * clusterDirEntrySize());
 
-    fwrite(root, sizeof(DirEntry), 32, fat_part);
+    fwrite(root, clusterDirEntrySize(), 32, fat_part);
 
     //clusters
     uint8_t t[CLUSTER_SIZE];
@@ -59,6 +60,7 @@ int initFat(){
 
 /*################################# Métodos de Diretório ###############################*/
 int fatFindEmptyBlock(){
+    //TODO TA PROCURTANDO NO DISCO PQ ?????
     FILE *fat_part = fopen("fat.part", "rb+");
     
     if(fat_part == NULL){
@@ -77,7 +79,8 @@ int fatFindEmptyBlock(){
 
 
 char** fatListDirectory(){
-    DirCluster* LIST = clusterReadDirClusters(0, 1);
+    printf("\n aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \n");
+    DirCluster* LIST = clusterReadDirClusters(9, 1);
     DirCluster ROOT = LIST[0];
     DirEntry* entries = clusterGetDirClusterDir(ROOT);
     for (size_t i = 0; i < clusterGetNumDirs(); i++){
@@ -86,48 +89,51 @@ char** fatListDirectory(){
     }
 }
 
-int fatMkdir(char* dirName){
-    DirCluster* LIST = clusterReadDirClusters(0, 1);
+int fatMkdir(char* dirName, FatTable ft){
+    //TODO Pegar o diretório atual
+    
+    //Lê o root
+    DirCluster* LIST = clusterReadDirClusters(9, 1);
     DirCluster ROOT = LIST[0];
     DirEntry* rootEntries = clusterGetDirClusterDir(ROOT);
     
     
     int i;
     for(i = 0; i < 32; i++){
-        if(clusterGetFirstBlock(rootEntries[i]) == NULL){
+        if(clusterGetFirstBlock(rootEntries[i]) == 0){
             break;
         }
     }
     
     if(i==32){
         printf("\nVAZIO NAO ENCONTRADO\n");
+        return -1;
     }
 
-    DirEntry novoDiretorio[32];
-    if(strlen(dirName)<18){
+    DirEntry newDir[32];
+    if(strlen(dirName) < 18){
         strcpy(clusterGetFileName(rootEntries[i]), dirName);
-
     }
     else{
-        print("FILE NAME MAIOR QUE 18");
+        printf("FILE NAME MAIOR QUE 18");
+        return -1;
     }
     
     clusterSetAttributes(rootEntries[i], 1);
 
-    int emptyBlock = fatFindEmptyBlock();
+    //Pega bloco vazio na fat
+    int emptyBlock = fatTableFindEmptyBlock(ft);
 
+    //Seta o bloco de inicio do diretório
     clusterSetFirstBlock(rootEntries[i], emptyBlock);
-    memset(rootEntries, 0, 32*sizeof(DirEntry));
-    rootEntries[i] = novoDiretorio;
-    
-    //TODO PARTE DE SALVAR NA FAT 1:29:46
-    FILE *fat_part = fopen("fat.part", "rb+");
-    
-        if(fat_part == NULL){
-            printf("\n É importante criar um arquivo antes de abri-lo \n");
-            return 0;
-        }
-    fclose(fat_part);
+
+    //Inicializando novo diretório
+    memset(newDir, 0, 32*sizeof(DirEntry));
+    DirCluster newDirectory = clusterCreateDirCluster(newDir, 32);
+
+    //Salva no disco e na table
+    clusterWriteDirCluster(9, newDirectory);
+    fatTableWrite(ft, emptyBlock, END_OF_FILE);
 }
 
 // int unlink(char* path) {

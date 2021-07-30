@@ -31,24 +31,18 @@ int main(int argc, char const *argv[]){
             //fatTablePrint(FT);
         
         //COMANDO LS
-        } else if(strcmp(line, "ls")){
-            
-            printf("\n%s\n", args[0]);
-            printf("\n%s\n", args[1]);
-            
-
-            printf("\n%s\n",line);            
+        } else if(!strcmp(line, "ls")){            
+            //args[0]
+            printf("\n%s\n",line);
+            fatListDirectory();  
         
         //COMANDO MKDIR
-        } else if(strcmp(line, "mkdir")){
-            for(int i = 0; i<num_args; i++){
-                printf("\n%s\n", args[i]);
-            }
-
+        } else if(!strcmp(line, "mkdir")){
             printf("\n%s\n",line);
+            fatMkdir(args[0], FT);
 
         //COMANDO CREATE
-        } else if(strcmp(line, "create")){
+        } else if(!strcmp(line, "create")){
             for(int i = 0; i<num_args; i++){
                 printf("\n%s\n", args[i]);
             }
@@ -56,7 +50,7 @@ int main(int argc, char const *argv[]){
             printf("\n%s\n",line);
 
         //COMANDO UNLINK    
-        } else if(strcmp(line, "unlink")){
+        } else if(!strcmp(line, "unlink")){
             for(int i = 0; i<num_args; i++){
                 printf("\n%s\n", args[i]);
             }
@@ -64,26 +58,27 @@ int main(int argc, char const *argv[]){
             printf("\n%s\n",line);
         
         //COMANDO WRITE
-        } else if(strcmp(line, "write")){
+        } else if(!strcmp(line, "write")){
             for(int i = 0; i<num_args; i++){
                 printf("\n%s\n", args[i]);
             }
             printf("\n%s\n",line);
             
         //COMANDO APPEND
-        } else if(strcmp(line, "append")){
+        } else if(!strcmp(line, "append")){
             for(int i = 0; i<num_args; i++){
                 printf("\n%s\n", args[i]);
             }
             printf("\n%s\n",line);
 
         //COMANDO READ
-        } else if(strcmp(line, "read")){
+        } else if(!strcmp(line, "read")){
             for(int i = 0; i<num_args; i++){
                 printf("\n%s\n", args[i]);
             }
             printf("\n%s\n",line);
-
+        }else{
+            printf("\n TROTOS COMMAND: %s\n",line);
         }
 
         add_history(line);
