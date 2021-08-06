@@ -1,5 +1,5 @@
 #include "../fat_table/fat_table.h"
 
 int initFat();
-char** fatListDirectory();
+void fatListDirectory(char* path);
 int fatMkdir(char* dirName, FatTable ft);

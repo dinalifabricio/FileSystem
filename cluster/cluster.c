@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "./cluster.h"
 #include "../consts.h"
 
 /*################################### Estruturas e Inicializações ###########################*/
 
-/* entrada de diretorio, 32 bytes cada */
+/* diretorios (incluindo ROOT), 32 entradas de diretorio
+com 32 bytes cada = 1024 bytes ou bloco de dados de 1024 bytes*/
 struct dirEntry {
     uint8_t filename[18];
     uint8_t attributes;
@@ -15,17 +17,20 @@ struct dirEntry {
     uint32_t size;
 };
 
+DirEntry createDirEntry(){
+    DirEntry D = malloc(sizeof(struct dirEntry));
+    D->filename[0] =  (uint8_t)'\0';
+    D->attributes = 0;
+    D->first_block = 0;
+    D->size = 0;
+    return D;
+}
+
 #define NUM_DIRS (CLUSTER_SIZE / sizeof(struct dirEntry))
 
 int clusterGetNumDirs(){
     return NUM_DIRS;
 }
-
-/* diretorios (incluindo ROOT), 32 entradas de diretorio
-com 32 bytes cada = 1024 bytes ou bloco de dados de 1024 bytes*/
-struct dirCluster{
-    struct dirEntry* dirs[NUM_DIRS];
-};
 
 struct dataCluster{
     uint8_t data[CLUSTER_SIZE];
@@ -40,18 +45,6 @@ DataCluster clusterCreateDataCluster(uint8_t c_data[CLUSTER_SIZE]) {
     return C;
 }
 
-DirCluster clusterCreateDirCluster(DirEntry* dir, int num_dirs) {
-
-    DirCluster D = malloc(sizeof(struct dirCluster));
-
-    for (size_t i = 0; i < num_dirs; i++){
-        D->dirs[i] = dir[i];
-    }
-
-    return D;
-
-}
-
 /*################################### Getters ############################*/
 int clusterDirEntrySize(){
     return sizeof(struct dirEntry);
@@ -59,10 +52,6 @@ int clusterDirEntrySize(){
 
 uint8_t* clusterGetDataCluster(DataCluster c) {
     return c->data;
-}
-
-DirEntry* clusterGetDirClusterDir(DirCluster c) {
-    return c->dirs;
 }
 
 char* clusterGetFileName(DirEntry Entry){
@@ -83,7 +72,9 @@ int clusterGetSize(DirEntry Entry){
 
 /*################################### Setters ############################*/
 void clusterSetFileName(DirEntry Entry, char* fileName){
-    for (size_t i = 0; i < 18; i++){
+    //strcpy(Entry->filename[i],fileName);
+    int i = 0;
+    for (i = 0; i < strlen(fileName); i++){
         Entry->filename[i] = (uint8_t)fileName[i];
     }
 }
@@ -127,7 +118,7 @@ DataCluster* clusterReadDataClusters(int start, int numClusters) {
     return clusters;
 }
 
-DirCluster* clusterReadDirClusters(int start, int numClusters) {
+DirEntry* clusterReadDirClusters(int position){
     FILE *fat_part = fopen("fat.part", "rb+");
     
     if(fat_part == NULL){
@@ -135,24 +126,15 @@ DirCluster* clusterReadDirClusters(int start, int numClusters) {
         return 0;
     }
 
-    fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
+    fseek(fat_part, position * CLUSTER_SIZE, SEEK_SET);
 
-    DirCluster* clusters = malloc(sizeof(struct dirCluster) * numClusters);
-    
-    for (int c = 0; c < numClusters; c++){
-        for (size_t directory = 0; directory < NUM_DIRS; directory++){
-            printf("\n dirs: %p\n", clusters[c]->dirs);
-            clusters[c]->dirs[directory] = malloc(sizeof(struct dirEntry) * NUM_DIRS);
-            printf("\n dirs: %p\n", clusters[c]->dirs);
-            
-            fread(clusters[c]->dirs[directory], sizeof(struct dirEntry), 1, fat_part);
-            printf("\n fread deu bom manito \n");
-        }
-    }
+    DirEntry* entries = malloc(sizeof(struct dirEntry) * 32);
+
+    fread(entries, clusterDirEntrySize(), 32, fat_part);
 
     fclose(fat_part);
 
-    return clusters;
+    return entries;
 }
 
 /*
@@ -177,7 +159,7 @@ int clusterWriteDataCluster(int start, DataCluster dataToWrite){
     return 0;
 }
 
-int clusterWriteDirCluster(int start, DirCluster dataToWrite){
+int clusterWriteDirCluster(int pos, DirEntry* dataToWrite){
     FILE *fat_part = fopen("fat.part", "rb+");
     
     if(fat_part == NULL){
@@ -185,9 +167,15 @@ int clusterWriteDirCluster(int start, DirCluster dataToWrite){
         return -1;
     }
 
-    fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
+    if(dataToWrite == NULL){
+        DirEntry* emptyDir = malloc(sizeof(struct dirEntry) * 32);
+        memset(emptyDir, 0, 32 * clusterDirEntrySize());
+        dataToWrite = emptyDir;
+    }
 
-    fwrite(dataToWrite->dirs, CLUSTER_SIZE, 1, fat_part);
+    fseek(fat_part, pos * CLUSTER_SIZE, SEEK_SET);
+
+    fwrite(dataToWrite, clusterDirEntrySize(), 32, fat_part);
 
     fclose(fat_part);
 

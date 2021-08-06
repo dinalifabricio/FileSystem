@@ -1,1 +1,1 @@
-int str_split (const char *str, char c, char ***arr);
+char** str_split(char* a_str, const char a_delim);

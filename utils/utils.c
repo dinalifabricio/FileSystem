@@ -1,60 +1,51 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
-int str_split (char *str, char c, char ***arr) {
-    int count = 1;
-    int token_len = 1;
-    int i = 0;
-    char *p;
-    char *t;
+char** str_split(char* a_str, const char a_delim){
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
 
-    p = str;
-    while (*p != '\0') {
-        if (*p == c)
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
             count++;
-        p++;
+            last_comma = tmp;
+        }
+        tmp++;
     }
 
-    *arr = (char**) malloc(sizeof(char*) * count);
-    if (*arr == NULL)
-        exit(1);
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
 
-    p = str;
-    while (*p != '\0') {
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
 
-        if (*p == c) {
-            (*arr)[i] = (char*) malloc( sizeof(char) * token_len );
+    result = malloc(sizeof(char*) * count);
 
-            if ((*arr)[i] == NULL)
-                exit(1);
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
 
-            token_len = 0;
-            i++;
+        while (token)
+        {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
         }
-        p++;
-        token_len++;
-    }
-    
-    (*arr)[i] = (char*) malloc( sizeof(char) * token_len );
-
-    if ((*arr)[i] == NULL)
-        exit(1);
-
-    i = 0;
-    p = str;
-    t = ((*arr)[i]);
-    while (*p != '\0') {
-        if (*p != c && *p != '\0') {
-            *t = *p;
-            t++;
-        }
-        else {
-            *t = '\0';
-            i++;
-            t = ((*arr)[i]);
-        }
-        p++;
+        return NULL;
+        *(result + idx) = 0;
     }
 
-    return count;
+    return result;
 }

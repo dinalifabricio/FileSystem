@@ -9,6 +9,8 @@ typedef struct dirEntry* DirEntry;
 int clusterGetNumDirs();
 
 //create
+DirEntry createDirEntry();
+
 DataCluster clusterCreateDataCluster(uint8_t c_data[CLUSTER_SIZE]);
 
 DirCluster clusterCreateDirCluster(DirEntry* dir, int num_dirs);
@@ -41,10 +43,10 @@ void clusterSetSize(DirEntry Entry, int size);
 //read
 DataCluster* clusterReadDataClusters(int start, int numClusters);
 
-DirCluster* clusterReadDirClusters(int start, int numClusters);
+DirEntry* clusterReadDirClusters(int position);
 
 //write
 int clusterWriteDataCluster(int start, DataCluster dataToWrite);
 
-int clusterWriteDirCluster(int start, DirCluster dataToWrite);
+int clusterWriteDirCluster(int pos, DirEntry* dataToWrite);
 

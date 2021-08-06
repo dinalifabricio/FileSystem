@@ -13,74 +13,57 @@ int main(int argc, char const *argv[]){
    
     while ((line = readline("menu_shell>")) != 0){
         //pega os argumentos
-        int num_args = 0;
         char **args = NULL;
-        num_args = str_split(line, ' ', &args);
+        args = str_split(line, ' ');
+
+        for (size_t i = 0; i < 2; i++){
+            printf("%s \n", args[i]);
+        }
 
         //COMANDO INIT
-        if(!strcmp(line, "init")){   
-            
+        if(!strcmp(args[0], "init")){   
             initFat();
-            printf("\n INIT THIS SHIT \n");  
+            printf("\n Fat Iniciada \n");  
         
         //COMANDO LOAD    
-        } else if(!strcmp(line, "load")){
+        } else if(!strcmp(args[0], "load")){
             
-            printf("\n LOAD ALL THAT SHIT \n");  
             FT = fatTableLoad();
+            printf("\n Fat Table Loaded \n");  
             //fatTablePrint(FT);
         
         //COMANDO LS
-        } else if(!strcmp(line, "ls")){            
-            //args[0]
-            printf("\n%s\n",line);
-            fatListDirectory();  
+        } else if(!strcmp(args[0], "ls")){
+            fatListDirectory(args[1]);
         
         //COMANDO MKDIR
-        } else if(!strcmp(line, "mkdir")){
-            printf("\n%s\n",line);
-            fatMkdir(args[0], FT);
+        } else if(!strcmp(args[0], "mkdir")){
+            fatMkdir(args[1], FT);
 
         //COMANDO CREATE
-        } else if(!strcmp(line, "create")){
-            for(int i = 0; i<num_args; i++){
-                printf("\n%s\n", args[i]);
-            }
-
+        } else if(!strcmp(args[0], "create")){
             printf("\n%s\n",line);
 
         //COMANDO UNLINK    
-        } else if(!strcmp(line, "unlink")){
-            for(int i = 0; i<num_args; i++){
-                printf("\n%s\n", args[i]);
-            }
-
+        } else if(!strcmp(args[0], "unlink")){
             printf("\n%s\n",line);
         
         //COMANDO WRITE
-        } else if(!strcmp(line, "write")){
-            for(int i = 0; i<num_args; i++){
-                printf("\n%s\n", args[i]);
-            }
+        } else if(!strcmp(args[0], "write")){
             printf("\n%s\n",line);
             
         //COMANDO APPEND
-        } else if(!strcmp(line, "append")){
-            for(int i = 0; i<num_args; i++){
-                printf("\n%s\n", args[i]);
-            }
-            printf("\n%s\n",line);
+        } else if(!strcmp(args[0], "append")){
+            printf("\n%s\n",args[0]);
 
         //COMANDO READ
-        } else if(!strcmp(line, "read")){
-            for(int i = 0; i<num_args; i++){
-                printf("\n%s\n", args[i]);
-            }
-            printf("\n%s\n",line);
+        } else if(!strcmp(args[0], "read")){
+            printf("\n%s\n",args[0]);
         }else{
-            printf("\n TROTOS COMMAND: %s\n",line);
+            printf("\nTROTOS COMMAND: %s\n", args[0]);
         }
 
+        printf("\n END OF WHILE \n");
         add_history(line);
     }
     

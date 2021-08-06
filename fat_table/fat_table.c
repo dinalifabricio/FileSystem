@@ -106,22 +106,21 @@ int fatTableSave(FatTable ft) {
 @retunr int: empty block position on Disk
 */
 void fatTableWrite(FatTable ft, int pos, u_int16_t data){
+    //fatTablePrint(ft);
     ft->table[pos] = data;
-
     if(ft->save_count == 0){
         fatTableSave(ft);
         ft->save_count = FAT_TABLE_SAVE_COUNT;
     }else{
         ft->save_count = ft->save_count-1;
     }
+    //fatTablePrint(ft);
 }
 
 /*################################# Métodos ###############################*/
-void fatTablePrint(FatTable F){
+void fatTablePrint(FatTable F) {
     printf("\n DA UM LIGA NESSA FAT TABLE: \n");
-    for (size_t i = 0; i < FAT_SIZE; i++)
-    {
-        printf("\n %x \n", F->table[i]);
+    for (size_t i = 0; i < FAT_SIZE; i++) {
+        printf("%x", F->table[i]);
     }
-    
 }
