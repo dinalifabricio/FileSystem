@@ -13,7 +13,6 @@ static uint16_t fat[4096];
 
 int initFat(){
     FILE *fat_part = fopen("fat.part", "wb");
-
     if(fat_part == NULL){
         printf("\n DEU ERRO NO INIT\n");
         return 0;
@@ -40,6 +39,7 @@ int initFat(){
     fwrite(&fat, sizeof(uint16_t), 4096, fat_part);
 
     //root
+
     // DirEntry root[32];
     // memset(root, 0, 32 * clusterDirEntrySize());
 
@@ -81,17 +81,13 @@ int fatFindEmptyBlock(){
 
 void fatListDirectory(char* path){
     char **dirs = NULL;
-    dirs = str_split(path, '/');
     int count = 0;
     int pos = 9;
-    DirEntry* entries = NULL;
-    
-    if(dirs == NULL){
-        entries = clusterReadDirClusters(pos);
-    }else{
+    DirEntry* entries = entries = clusterReadDirClusters(pos);
+
+    if(path != NULL){
+        dirs = str_split(path, '/');
         while (dirs[count] != NULL){
-            entries = clusterReadDirClusters(pos);
-            
             int i = 0;
             for (i = 0; i < count; i++)
                 if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
@@ -103,6 +99,8 @@ void fatListDirectory(char* path){
             }
 
             pos = clusterGetFirstBlock(entries[i]);
+
+            entries = clusterReadDirClusters(pos);
 
             count++;
         }
@@ -122,49 +120,70 @@ void fatListDirectory(char* path){
 }
 
 int fatMkdir(char* dirName, FatTable ft){
-    //TODO Pegar o diretório atual
-    
-    //Lê o root
-    
-    DirEntry* rootEntries = clusterReadDirClusters(9);
+    char **dirs = NULL;
+    int count = 0;
+    int pos = 9;
+    DirEntry* entries =  clusterReadDirClusters(pos);
+
+    if(dirName != NULL){
+        dirs = str_split(dirName, '/');
+        //Enquanto não for o último dir do path
+        while (dirs[count +1] != NULL){
+            int i = 0;
+            for (i = 0; i < count; i++)
+                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
+                    break;
+                
+            if (i == 32){
+                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
+                return -1;
+            }
+
+            pos = clusterGetFirstBlock(entries[i]);
+
+            entries = clusterReadDirClusters(pos);
+
+            count++;
+        }
+    }else{
+        printf("\n Caminho vazio \n");
+        return -1;
+    }
+
+    //Criando novo caminho
     int i;
     for(i = 0; i < 32; i++)
-        if(rootEntries[i] == NULL)
+        if(entries[i] == NULL)
             break;
 
     if(i==32){
         printf("\n ESSE DIR TA FULL \n");
         return -1;
-    }else{
-        printf("\n DIR VAZIO NA POS %d \n", i);
     }
 
-    if(strlen(dirName) < 18){
-        rootEntries[i] = createDirEntry();
-        clusterSetFileName(rootEntries[i], dirName);
-        printf("\n CRIANDO O DIR %s \n", clusterGetFileName(rootEntries[i]));
+    if(strlen(dirs[count]) < 18){
+        entries[i] = createDirEntry();
+        clusterSetFileName(entries[i], dirs[count]);
+        printf("\n CRIANDO O DIR %s \n", clusterGetFileName(entries[i]));
     }
     else{
         printf("\n FILE NAME MAIOR QUE 18 \n");
         return -1;
     }
 
-    clusterSetAttributes(rootEntries[i], 1);
+    clusterSetAttributes(entries[i], 1);
 
     //Pega bloco vazio na fat
     int emptyBlock = fatTableFindEmptyBlock(ft);
-    printf("\n Bloco vazio na fat %d \n", emptyBlock);
 
     //Seta o bloco de inicio do diretório
-    clusterSetFirstBlock(rootEntries[i], emptyBlock);
+    clusterSetFirstBlock(entries[i], emptyBlock);
 
     //Cria novo cluster de diretório
-    // DirEntry* emptyDir = malloc(sizeof(struct dirEntry) * 32);
-    // memset(emptyDir, 0, 32 * clusterDirEntrySize());
     clusterWriteDirCluster(emptyBlock, NULL);
 
     //Salva no disco e na table
-    clusterWriteDirCluster(9, rootEntries);
+    clusterWriteDirCluster(pos, entries);
 
     fatTableWrite(ft, emptyBlock, END_OF_FILE);
 }

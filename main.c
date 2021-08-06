@@ -63,7 +63,6 @@ int main(int argc, char const *argv[]){
             printf("\nTROTOS COMMAND: %s\n", args[0]);
         }
 
-        printf("\n END OF WHILE \n");
         add_history(line);
     }
     

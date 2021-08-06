@@ -43,8 +43,13 @@ char** str_split(char* a_str, const char a_delim){
             *(result + idx++) = strdup(token);
             token = strtok(0, delim);
         }
-        return NULL;
-        *(result + idx) = 0;
+        if(!(idx == count - 1)){
+            result[1] = NULL;
+            return result;
+        }else{
+            *(result + idx) = 0;
+        }
+
     }
 
     return result;
