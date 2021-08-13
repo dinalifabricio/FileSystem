@@ -19,7 +19,12 @@ struct dirEntry {
 
 DirEntry createDirEntry(){
     DirEntry D = malloc(sizeof(struct dirEntry));
-    D->filename[0] =  (uint8_t)'\0';
+
+    for (size_t i = 0; i < 18; i++)
+    {
+        D->filename[i] =  (uint8_t)'\0';
+    }
+
     D->attributes = 0;
     D->first_block = 0;
     D->size = 0;
@@ -72,9 +77,11 @@ int clusterGetSize(DirEntry Entry){
 
 /*################################### Setters ############################*/
 void clusterSetFileName(DirEntry Entry, char* fileName){
+    printf("CHEGOU %s \n", fileName);
     //strcpy(Entry->filename[i],fileName);
     int i = 0;
     for (i = 0; i < strlen(fileName); i++){
+        printf("%c \n", (uint8_t)fileName[i]);
         Entry->filename[i] = (uint8_t)fileName[i];
     }
 }
@@ -93,11 +100,10 @@ void clusterSetSize(DirEntry Entry, int size){
 
 /*################################# Métodos ###############################*/
 /*
-@param start: o cluster de onde deve-se começar a leitura
-@param numClusters: quantos clusters vão ser lidos
-@retunr: 
+@param position: o cluster de onde deve-se realizar a leitura
+@retunr: DataCluster lido
 */ 
-DataCluster* clusterReadDataClusters(int start, int numClusters) {
+uint8_t* clusterReadDataCluster(int position) {
     FILE *fat_part = fopen("fat.part", "rb+");
     
     if(fat_part == NULL){
@@ -105,17 +111,15 @@ DataCluster* clusterReadDataClusters(int start, int numClusters) {
         return 0;
     }
 
-    DataCluster* clusters = malloc(sizeof(struct dataCluster) * numClusters);
+    uint8_t* cluster = malloc(sizeof(uint8_t) * CLUSTER_SIZE);
     
-    fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
-
-    for (size_t i = start; i < numClusters+start; i++){
-        fread(clusters[i]->data, sizeof(uint8_t), CLUSTER_SIZE, fat_part);
-    }
-
+    fseek(fat_part, position * CLUSTER_SIZE, SEEK_SET);
+   
+    fread(cluster, sizeof(uint8_t), CLUSTER_SIZE, fat_part);
+    
     fclose(fat_part);
 
-    return clusters;
+    return cluster;
 }
 
 DirEntry* clusterReadDirClusters(int position){
@@ -132,17 +136,18 @@ DirEntry* clusterReadDirClusters(int position){
 
     fread(entries, clusterDirEntrySize(), 32, fat_part);
 
+    
     fclose(fat_part);
 
     return entries;
 }
 
 /*
-@param start: o cluster de onde deve-se começar a leitura
-@param data: o cluster que será escrito
+@param pos: o cluster de onde deve-se escrever
+@param dataToWrite: o que será escrito
 @retunr: 
 */ 
-int clusterWriteDataCluster(int start, DataCluster dataToWrite){
+int clusterWriteDataCluster(int pos, uint8_t* dataToWrite){
     FILE *fat_part = fopen("fat.part", "rb+");
     
     if(fat_part == NULL){
@@ -150,9 +155,15 @@ int clusterWriteDataCluster(int start, DataCluster dataToWrite){
         return -1;
     }
 
-    fseek(fat_part, start * CLUSTER_SIZE, SEEK_SET);
+    if(dataToWrite == NULL){   
+        uint8_t* emptyData = malloc(sizeof(uint8_t) * CLUSTER_SIZE);
+        memset(emptyData, 0, CLUSTER_SIZE);
+        dataToWrite = emptyData;
+    }
 
-    fwrite(dataToWrite->data, CLUSTER_SIZE, 1, fat_part);
+    fseek(fat_part, pos * CLUSTER_SIZE, SEEK_SET);
+
+    fwrite(dataToWrite, sizeof(uint8_t), CLUSTER_SIZE, fat_part);
 
     fclose(fat_part);
 

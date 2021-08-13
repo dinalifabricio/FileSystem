@@ -62,24 +62,11 @@ int fatTableFindEmptyBlock(FatTable ft){
 
 /*
 @param FatTable ft: current FatTable
-@param int initialPos: file intial position on FatTable
+@param int initialPos: position on FatTable
 */
-// int* fatTableGetFile(FatTable ft, int initialPos){
-//     int* blocks = malloc(sizeof(int) * 20);
-    
-//     for (size_t i = 0; i < 20; i++)
-//         blocks[i] = -1;
-    
-//     int count = 0;
-//     int next = initialPos;
-
-//     while (next != END_OF_FILE){
-//         blocks[count] = next;
-//         next = ft->table[initialPos];
-//     }
-    
-//     return blocks;
-// }
+uint16_t fatTableGet(FatTable ft, int pos){
+    return ft->table[pos];
+}
 
 /*################################### SETTERS ###########################*/
 /*
@@ -103,7 +90,7 @@ int fatTableSave(FatTable ft) {
 
 /*
 @param FatTable ft: current FatTable
-@retunr int: empty block position on Disk
+@return int: empty block position on Disk
 */
 void fatTableWrite(FatTable ft, int pos, u_int16_t data){
     //fatTablePrint(ft);

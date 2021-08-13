@@ -1,7 +1,5 @@
 #include "../consts.h"
 
-typedef struct dirCluster* DirCluster;
-
 typedef struct dataCluster* DataCluster;
 
 typedef struct dirEntry* DirEntry;
@@ -13,14 +11,10 @@ DirEntry createDirEntry();
 
 DataCluster clusterCreateDataCluster(uint8_t c_data[CLUSTER_SIZE]);
 
-DirCluster clusterCreateDirCluster(DirEntry* dir, int num_dirs);
-
 //get
 int clusterDirEntrySize();
 
 uint8_t* clusterGetDataCluster(DataCluster c);
-
-DirEntry* clusterGetDirClusterDir(DirCluster c);
 
 char* clusterGetFileName(DirEntry Entry);
 
@@ -41,12 +35,12 @@ void clusterSetSize(DirEntry Entry, int size);
 
 
 //read
-DataCluster* clusterReadDataClusters(int start, int numClusters);
+uint8_t* clusterReadDataCluster(int position);
 
 DirEntry* clusterReadDirClusters(int position);
 
 //write
-int clusterWriteDataCluster(int start, DataCluster dataToWrite);
+int clusterWriteDataCluster(int pos, uint8_t* dataToWrite);
 
 int clusterWriteDirCluster(int pos, DirEntry* dataToWrite);
 

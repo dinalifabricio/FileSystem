@@ -27,7 +27,6 @@ int main(int argc, char const *argv[]){
         
         //COMANDO LOAD    
         } else if(!strcmp(args[0], "load")){
-            
             FT = fatTableLoad();
             printf("\n Fat Table Loaded \n");  
             //fatTablePrint(FT);
@@ -42,29 +41,130 @@ int main(int argc, char const *argv[]){
 
         //COMANDO CREATE
         } else if(!strcmp(args[0], "create")){
-            printf("\n%s\n",line);
+            fatCreateFile(args[1], FT);
 
-        //COMANDO UNLINK    
+        //TODO COMANDO UNLINK    
         } else if(!strcmp(args[0], "unlink")){
             printf("\n%s\n",line);
         
         //COMANDO WRITE
         } else if(!strcmp(args[0], "write")){
-            printf("\n%s\n",line);
+            fatWriteData(args[1], args[2], 0);
             
         //COMANDO APPEND
         } else if(!strcmp(args[0], "append")){
-            printf("\n%s\n",args[0]);
+            fatWriteData(args[1], args[2], 1);
 
         //COMANDO READ
         } else if(!strcmp(args[0], "read")){
-            printf("\n%s\n",args[0]);
+            fatReadData(args[1], FT);
+
         }else{
-            printf("\nTROTOS COMMAND: %s\n", args[0]);
+            printf("\n%s não é um comando existente\n", args[0]);
         }
 
+        printf("\n");
         add_history(line);
+        free(args);
     }
     
     return 0;
 }
+
+//TODO O NOME DOS ARQUIVOS E DIRETÓRIOS TÃO SUJOS, EXEMPLOS:
+
+/*ERRO AO CRIAR DIRETÓRIO APÓS REALIZAR OUTRAS OPERAÇÕES
+
+menu_shell>create aba
+create 
+aba 
+
+ CRIANDO O FILE aba 
+
+menu_shell>read aba
+read 
+aba 
+
+
+
+menu_shell>write aba dsadasdasdasdasdasd
+write 
+aba 
+
+menu_shell>read aba
+read 
+aba 
+
+dsadasdasdasdasdasd
+
+menu_shell>mkdir cate
+mkdir 
+cate 
+
+ CRIANDO O DIR cate�U 
+
+menu_shell>^Cmake: *** [Makefile:3: all] Interrupção
+*/
+
+/*ERRO AO DAR WRITE EM DIR DE PROFUNDIDADE 1
+
+menu_shell>mkdir aba
+mkdir 
+aba 
+
+ CRIANDO O DIR aba 
+
+menu_shell>ls
+ls 
+(null) 
+
+aba 
+
+menu_shell>create aba/cate
+create 
+aba/cate 
+
+ CRIANDO O FILE cate 
+
+menu_shell>write aba/cate dasdasdasdasdasdasdasdasdasd
+write 
+aba/cate 
+make: *** [Makefile:3: all] Falha de segmentação (arquivo core criado)
+*/
+
+/*
+TODO ERRO AO LOADAR FAT JÀ EXISTENTE, PROGRAMA SÓ FUNCIONA SE DER INIT DPS DO MAKE
+felipe@felipe-VirtualBox:~/Documentos/FileSystem$ make
+cc main.c utils/utils.c cluster/cluster.c fat/fat.c fat_table/fat_table.c -o main -lreadline
+./main
+menu_shell>init
+init 
+(null) 
+
+ Fat Iniciada 
+
+menu_shell>load
+load 
+(null) 
+
+ Fat Table Loaded 
+
+menu_shell>ls
+ls 
+(null) 
+
+felipe@felipe-VirtualBox:~/Documentos/FileSystem$ make
+cc main.c utils/utils.c cluster/cluster.c fat/fat.c fat_table/fat_table.c -o main -lreadline
+./main
+menu_shell>load
+load 
+(null) 
+
+ Fat Table Loaded 
+
+menu_shell>mkdir aaaaa
+mkdir 
+aaaaa 
+
+ CRIANDO O DIR aaaaaU (o erro foi esse U a mais, mas tbm ja deu seg fault)
+*/
