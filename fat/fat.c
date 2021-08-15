@@ -277,7 +277,7 @@ int fatReadData(char* path, FatTable ft){
     char **dirs = NULL;
     int count = 0;
     int pos = 9;
-    DirEntry* entries = entries = clusterReadDirClusters(pos);
+    DirEntry* entries = clusterReadDirClusters(pos);
     uint8_t* data = NULL;
 
     if(path != NULL){
@@ -344,7 +344,7 @@ int fatWriteData(char* path, char* string, int append){
     char **dirs = NULL;
     int count = 0;
     int pos = 9;
-    DirEntry* entries = entries = clusterReadDirClusters(pos);
+    DirEntry* entries = clusterReadDirClusters(pos);
     uint8_t* data = NULL;
 
     if(path != NULL){
@@ -408,40 +408,115 @@ int fatWriteData(char* path, char* string, int append){
 
 
 
-void fatUnlink(FatTable ft, char* path, int dirOrFile){
-    if (dirOrFile == 0){
-        //É um arquivo
-        char **dirs = NULL;
-        int count = 0;
-        int pos = 9;
-        DirEntry* entries = entries = clusterReadDirClusters(pos);
-        uint8_t* data = NULL;
-        if(dataName != NULL){
-            dirs = str_split(dataName, '/');
-            //Enquanto não for o último dir do path
-            while (dirs[count +1] != NULL){
-                int i = 0;
-                for (i = 0; i < count; i++)
-                    if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
-                        break;
-                    
-                if (i == 32){
-                    printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                    return -1;
-                }
+void fatUnlink(FatTable ft, char* dataName){
+    int dirOrFile;   
+    char **dirs = NULL;
+    int count = 0;
+    int pos = 9;
+    int oldpos = 0;
+    DirEntry* entries = clusterReadDirClusters(pos);
+    DirEntry* entriesOld = clusterReadDirClusters(pos);
+    DirEntry* emptyDir = malloc(clusterDirEntrySize() * 32);
+    uint8_t* data = NULL;
 
-                pos = clusterGetFirstBlock(entries[i]);
 
-                entries = clusterReadDirClusters(pos);
-
-                count++;
+    if(dataName != NULL){
+        dirs = str_split(dataName, '/');
+        //Enquanto não for o último dir do path
+        while (dirs[count + 1] != NULL){
+            DirEntry* entriesOld = clusterReadDirClusters(pos);
+            oldpos = pos;
+            int i = 0;
+            for (i = 0; i < count; i++)
+                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
+                    break;
+                
+            if (i == 32){
+                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
+                return;
             }
-        }else{
-            printf("\n Caminho vazio \n");
-            return -1;
+            dirOrFile = clusterGetAttributes(entries[i]);
+
+            pos = clusterGetFirstBlock(entries[i]);
+
+            entries = clusterReadDirClusters(pos);
+
+            count++;
+        }
+    }else{
+        printf("\n Caminho vazio \n");
+        return;
+    }
+
+    //É um arquivo    
+    if(dirOrFile == 0){    
+        
+        
+        //Limpa o bloco no disco
+        clusterWriteDataCluster(pos, NULL);
+        
+        
+        
+        //Salva o nome do arquivo no disco e na table 
+        clusterWriteDirCluster(pos, entries);
+
+        for(int i = 0; i < 32; i++){
+            if (i==31){
+                emptyDir[i] = createDirEntry();
+                break;
+            }
+            
+            if(i == count-1)
+                continue;  
+            
+            else
+                emptyDir[i] = entriesOld[i];
+
+
+        }
+        fatTableWrite(ft, oldpos, emptyDir);
+    }
+
+    
+    //É um DIRETORIO
+    if(dirOrFile == 1){
+
+
+        for(int i = 0; i < 32; i++) {
+            if(entries[i] != NULL)
+                printf("\n O DIRETORIO NAO ESTA VAZIO\n");
+                return;
         }
 
+        //Limpa o bloco no disco
+        clusterWriteDirCluster(pos, NULL);
+        
+        
+        
+        //Salva o nome do arquivo no disco e na table 
+        clusterWriteDirCluster(pos, entries);
+
+        for(int i = 0; i < 32; i++){
+            if (i==31){
+                emptyDir[i] = createDirEntry();
+                break;
+            }
+            
+            if(i == count-1)
+                continue;  
+            
+            else
+                emptyDir[i] = entriesOld[i];
 
 
+        }
+        fatTableWrite(ft, oldpos, emptyDir);
+        
     }
+
+    free(entries);
+    free(dataName);
+    free(dirs);
+    free(entriesOld);
+    free(emptyDir);
 }

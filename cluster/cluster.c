@@ -191,4 +191,6 @@ int clusterWriteDirCluster(int pos, DirEntry* dataToWrite){
     fclose(fat_part);
 
     return 0;
+
 }
+

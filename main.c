@@ -45,7 +45,7 @@ int main(int argc, char const *argv[]){
 
         //TODO COMANDO UNLINK    
         } else if(!strcmp(args[0], "unlink")){
-            printf("\n%s\n",line);
+            fatUnlink(FT, args[1]);
         
         //COMANDO WRITE
         } else if(!strcmp(args[0], "write")){
