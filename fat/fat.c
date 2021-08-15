@@ -184,6 +184,7 @@ int fatMkdir(char* dirName, FatTable ft){
 
     
     free(dirs);
+    return 0;
 }
 
 
@@ -259,6 +260,7 @@ int fatCreateFile(char* dataName, FatTable ft) {
     fatTableWrite(ft, emptyBlock, END_OF_FILE);
 
     free(dirs);
+    return 0;
 }
 
 int fatReadData(char* path, FatTable ft){
@@ -331,6 +333,7 @@ int fatReadData(char* path, FatTable ft){
     free(entries);
     free(data);
     free(dirs);
+    return 0;
 }
 
 
@@ -400,6 +403,7 @@ int fatWriteData(char* path, char* string, int append){
 
     free(entries);
     free(dirs);
+    return 0;
 }
 
 

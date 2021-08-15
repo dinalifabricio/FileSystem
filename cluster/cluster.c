@@ -84,8 +84,8 @@ void clusterSetFileName(DirEntry Entry, char* fileName){
     }
 }
     
-void clusterSetAttributes(DirEntry Entry, int attributtes){
-    Entry->attributes = (uint8_t)attributtes;
+void clusterSetAttributes(DirEntry Entry, int attributes){
+    Entry->attributes = (uint8_t)attributes;
 }
 
 void clusterSetFirstBlock(DirEntry Entry, int first_block){

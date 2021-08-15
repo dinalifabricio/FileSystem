@@ -27,7 +27,7 @@ int clusterGetSize(DirEntry Entry);
 //set
 void clusterSetFileName(DirEntry Entry, char* fileName);
 
-void clusterSetAttributes(DirEntry Entry, int attributtes);
+void clusterSetAttributes(DirEntry Entry, int attributes);
 
 void clusterSetFirstBlock(DirEntry Entry, int first_block);
 
