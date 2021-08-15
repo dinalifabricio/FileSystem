@@ -14,7 +14,7 @@ static uint16_t fat[4096];
 int initFat(){
     FILE *fat_part = fopen("fat.part", "wb");
     if(fat_part == NULL){
-        printf("\n DEU ERRO NO INIT\n");
+        printf("\n ERRO AO INICIALIZAR\n");
         return 0;
     }
 
@@ -44,7 +44,7 @@ int initFat(){
     // memset(root, 0, 32 * clusterDirEntrySize());
 
     // fwrite(root, clusterDirEntrySize(), 32, fat_part);
-    clusterWriteDirCluster(9, NULL); //TODO MESMA COISA CM O DATA CLUSTER
+    clusterWriteDirCluster(9, NULL); 
 
     //clusters
     uint8_t t[CLUSTER_SIZE];
@@ -60,24 +60,6 @@ int initFat(){
 }
 
 /*################################# Métodos de Diretório ###############################*/
-int fatFindEmptyBlock(){
-    //TODO TA PROCURTANDO NO DISCO PQ ?????
-    FILE *fat_part = fopen("fat.part", "rb+");
-    
-    if(fat_part == NULL){
-        printf("\n É importante criar um arquivo antes de abri-lo \n");
-        return 0;
-    }
-    
-    int b;
-    for(b=10; b < FAT_SIZE; b++){
-        if (fat[b] = 0x0000) break;
-    }
-
-    fclose(fat_part);
-    return b;
-}
-
 
 void fatListDirectory(char* path){
     char **dirs = NULL;
@@ -88,21 +70,25 @@ void fatListDirectory(char* path){
     if(path != NULL){
         dirs = str_split(path, '/');
         while (dirs[count] != NULL){
+            
             int i = 0;
-            for (i = 0; i < count; i++)
-                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
-                    break;
+            for (i = 0; i < 32; i++){
                 
-            if (i == 32){
-                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                return;
-            }
+                if (entries[i] == NULL){
+                    printf("\n DIR %s NÂO PERTENCE A ESTE DIRETORIO\n", dirs[count]);
+                    return;
+                }
+                
+                
+                if(!strcmp(clusterGetFileName(entries[i]), dirs[count])) {
+                    if(clusterGetAttributes(entries[i]) == 0){
+                        printf("\n %s É UM ARQUIVO E NÂO UM DIR \n", dirs[count]);
+                        return;
+                    }
+                    break;
+                }
 
-            if(clusterGetAttributes(entries[i]) == 0){
-                printf("\n %s É UM ARQUIVO E NÂO UM DIR \n", dirs[count]);
-                return;
             }
-
             pos = clusterGetFirstBlock(entries[i]);
 
             entries = clusterReadDirClusters(pos);
@@ -137,13 +123,15 @@ int fatMkdir(char* dirName, FatTable ft){
         //Enquanto não for o último dir do path
         while (dirs[count +1] != NULL){
             int i = 0;
-            for (i = 0; i < count; i++)
-                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
+            for (i = 0; i < 32; i++) {
+                if (entries[i] == NULL){
+                    printf("\n DIR %s NÂO PERTENCE A ESTE DIRETORIO\n", dirs[count]);
+                    return -1;
+                }
+
+                if(!strcmp(clusterGetFileName(entries[i]), dirs[count]))
                     break;
                 
-            if (i == 32){
-                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                return -1;
             }
 
             pos = clusterGetFirstBlock(entries[i]);
@@ -194,7 +182,7 @@ int fatMkdir(char* dirName, FatTable ft){
 
     fatTableWrite(ft, emptyBlock, END_OF_FILE);
 
-    free(entries);
+    
     free(dirs);
 }
 
@@ -212,15 +200,16 @@ int fatCreateFile(char* dataName, FatTable ft) {
         //Enquanto não for o último dir do path
         while (dirs[count +1] != NULL){
             int i = 0;
-            for (i = 0; i < count; i++)
-                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
+            for (i = 0; i < 32; i++) {
+                if (entries[i] == NULL){
+                    printf("\n DIR %s NÂO PERTENCE A ESTE DIRETORIO\n", dirs[count]);
+                    return -1;
+                }
+                if(!strcmp(clusterGetFileName(entries[i]), dirs[count]))
                     break;
                 
-            if (i == 32){
-                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                return -1;
             }
-
+            
             pos = clusterGetFirstBlock(entries[i]);
 
             entries = clusterReadDirClusters(pos);
@@ -269,7 +258,6 @@ int fatCreateFile(char* dataName, FatTable ft) {
 
     fatTableWrite(ft, emptyBlock, END_OF_FILE);
 
-    free(entries);
     free(dirs);
 }
 
@@ -285,36 +273,42 @@ int fatReadData(char* path, FatTable ft){
         //Enquanto não for o penúltimo do path ainda é dir
         while (dirs[count] != NULL){
             int i = 0;
-            for (i = 0; i < count; i++)
-                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
+            for (; i < 32; i++) {
+                if (entries[i] == NULL){
+                    printf("\n DIR %s NÂO PERTENCE A ESTE DIRETORIO\n", dirs[count]);
+                    return -1;
+                }
+
+                if(!strcmp(clusterGetFileName(entries[i]), dirs[count])) {
                     break;
+                    
+                }
                 
-            if (i == 32){
-                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                return -1;
+                //Se é um arquivo mas ainda não chegou no fim do path então foi passado um path errado
+                // if(clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
+                //     printf("\n%s É UM ARQUIVO E NÃO UM DIR\n", dirs[count]);
+                //     return -1;
+                
+                // }
+                //Se for um dir e FOR o fim do path, então não foi passado o path pra um arquivo
+                // if (clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
+                //     printf("\n%s É UM DIR E NÃO UM ARQUIVO\n", dirs[count]);
+                //     return -1;
+                //}
+
+                
             }
-
-            pos = clusterGetFirstBlock(entries[i]);
-            
-            //Se é um arquivo mas ainda não chegou no fim do path então foi passado um path errado
-            if(clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
-                printf("\n%s É UM ARQUIVO E NÃO UM DIR\n", dirs[count]);
-                return -1;
-            
-            }//Se for um dir e FOR o fim do path, então não foi passado o path pra um arquivo
-            else if (clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
-                printf("\n%s É UM DIR E NÃO UM ARQUIVO\n", dirs[count]);
-                return -1;
-
             //Se é um arquivo e o path acabou então é ele que a gnt quer
-            }else if(clusterGetAttributes(entries[i]) == 0){
+            pos = clusterGetFirstBlock(entries[i]);
+            if(clusterGetAttributes(entries[i]) == 0){
+                
                 data = clusterReadDataCluster(pos);
-            
+                break;
+        
             //Se ainda é um dir antes do fim do arquivo pega as entradas
             }else{
                 entries = clusterReadDirClusters(pos);
             }
-
             count++;
         }
     }
@@ -352,36 +346,39 @@ int fatWriteData(char* path, char* string, int append){
         //Enquanto não for o penúltimo do path ainda é dir
         while (dirs[count] != NULL){
             int i = 0;
-            for (i = 0; i < count; i++)
-                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
-                    break;
+            for (i = 0; i < 32; i++) {
+                if (entries[i] == NULL){
+                    printf("\n DIR %s NÂO PERTENCE A ESTE DIRETORIO\n", dirs[count]);
+                    return -1;
+                }
                 
-            if (i == 32){
-                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                return -1;
+                if(!strcmp(clusterGetFileName(entries[i]), dirs[count])) {
+                    break;
+                }
+                
+                //Se é um arquivo mas ainda não chegou no fim do path então foi passado um path errado
+                // if(clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
+                //     printf("\n%s É UM ARQUIVO E NÃO UM DIR\n", dirs[count]);
+                //     return -1;
+                
+                // }
+                //Se for um dir e FOR o fim do path, então não foi passado o path pra um arquivo
+                // if (clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
+                //     printf("\n%s É UM DIR E NÃO UM ARQUIVO\n", dirs[count]);
+                //     return -1;
+                //}
             }
-
-            pos = clusterGetFirstBlock(entries[i]);
-            
-            //Se é um arquivo mas ainda não chegou no fim do path então foi passado um path errado
-            if(clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
-                printf("\n%s É UM ARQUIVO E NÃO UM DIR\n", dirs[count]);
-                return -1;
-            
-            }//Se for um dir e FOR o fim do path, então não foi passado o path pra um arquivo
-            else if (clusterGetAttributes(entries[i]) == 0 && dirs[count +1] != NULL){
-                printf("\n%s É UM DIR E NÃO UM ARQUIVO\n", dirs[count]);
-                return -1;
-
             //Se é um arquivo e o path acabou então é ele que a gnt quer
-            }else if(clusterGetAttributes(entries[i]) == 0){
+            pos = clusterGetFirstBlock(entries[i]);
+            if(clusterGetAttributes(entries[i]) == 0){
+                
                 data = clusterReadDataCluster(pos);
-            
+                break;
+        
             //Se ainda é um dir antes do fim do arquivo pega as entradas
             }else{
                 entries = clusterReadDirClusters(pos);
             }
-
             count++;
         }
     }
@@ -402,7 +399,6 @@ int fatWriteData(char* path, char* string, int append){
     clusterWriteDataCluster(pos, data);
 
     free(entries);
-    free(data);
     free(dirs);
 }
 
@@ -415,7 +411,6 @@ void fatUnlink(FatTable ft, char* dataName){
     int pos = 9;
     int oldpos = 0;
     DirEntry* entries = clusterReadDirClusters(pos);
-    DirEntry* entriesOld = clusterReadDirClusters(pos);
     DirEntry* emptyDir = malloc(clusterDirEntrySize() * 32);
     uint8_t* data = NULL;
 
@@ -423,31 +418,34 @@ void fatUnlink(FatTable ft, char* dataName){
     if(dataName != NULL){
         dirs = str_split(dataName, '/');
         //Enquanto não for o último dir do path
-        while (dirs[count + 1] != NULL){
-            DirEntry* entriesOld = clusterReadDirClusters(pos);
+        while (dirs[count] != NULL){
             oldpos = pos;
             int i = 0;
-            for (i = 0; i < count; i++)
-                if(!strcmp(clusterGetFileName(entries[count]), dirs[count]))
+            for (i = 0; i < 32; i++) {
+                if (entries[i] == NULL){
+                    printf("\n DIR %s NÂO PERTENCE A ESTE DIRETORIO\n", dirs[count]);
+                    return;
+                }
+
+                if(!strcmp(clusterGetFileName(entries[i]), dirs[count]))
                     break;
                 
-            if (i == 32){
-                printf("\n DIR %s NÂO PERTENCE A %s \n", dirs[count], dirs[count-1]);
-                return;
             }
+            
             dirOrFile = clusterGetAttributes(entries[i]);
 
             pos = clusterGetFirstBlock(entries[i]);
 
             entries = clusterReadDirClusters(pos);
-
+            
             count++;
+            
         }
     }else{
         printf("\n Caminho vazio \n");
         return;
     }
-
+    
     //É um arquivo    
     if(dirOrFile == 0){    
         
@@ -456,9 +454,9 @@ void fatUnlink(FatTable ft, char* dataName){
         clusterWriteDataCluster(pos, NULL);
         
         
+        fatTableWrite(ft, pos, EMPTY_BLOCK);
         
-        //Salva o nome do arquivo no disco e na table 
-        clusterWriteDirCluster(pos, entries);
+        //LIMPANDO O DIRETORIO
 
         for(int i = 0; i < 32; i++){
             if (i==31){
@@ -470,35 +468,40 @@ void fatUnlink(FatTable ft, char* dataName){
                 continue;  
             
             else
-                emptyDir[i] = entriesOld[i];
+                emptyDir[i] = entries[i];
 
 
         }
-        fatTableWrite(ft, oldpos, emptyDir);
+        clusterWriteDirCluster(oldpos, emptyDir);
+        
+        
     }
 
     
     //É um DIRETORIO
     if(dirOrFile == 1){
-
+        
 
         for(int i = 0; i < 32; i++) {
-            if(entries[i] != NULL)
-                printf("\n O DIRETORIO NAO ESTA VAZIO\n");
+            if(entries[i] != NULL){
+                printf("\nNOME DA ENTRY %s\n", clusterGetFileName(entries[i]));
+                printf("\nO DIRETORIO NAO ESTA VAZIO\n");
                 return;
+            }
         }
 
         //Limpa o bloco no disco
         clusterWriteDirCluster(pos, NULL);
         
+        fatTableWrite(ft, pos, EMPTY_BLOCK);
         
         
-        //Salva o nome do arquivo no disco e na table 
-        clusterWriteDirCluster(pos, entries);
+        //LIMPANDO O DIRETORIO
 
         for(int i = 0; i < 32; i++){
             if (i==31){
-                emptyDir[i] = createDirEntry();
+                emptyDir[i] = malloc(clusterDirEntrySize());
+                memset(emptyDir[i], 0, clusterDirEntrySize());
                 break;
             }
             
@@ -506,17 +509,16 @@ void fatUnlink(FatTable ft, char* dataName){
                 continue;  
             
             else
-                emptyDir[i] = entriesOld[i];
+                emptyDir[i] = entries[i];
 
 
         }
-        fatTableWrite(ft, oldpos, emptyDir);
+        clusterWriteDirCluster(oldpos, emptyDir);
+        
         
     }
 
     free(entries);
     free(dataName);
     free(dirs);
-    free(entriesOld);
-    free(emptyDir);
 }

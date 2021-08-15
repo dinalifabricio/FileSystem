@@ -92,7 +92,7 @@ int fatTableSave(FatTable ft) {
 @param FatTable ft: current FatTable
 @return int: empty block position on Disk
 */
-void fatTableWrite(FatTable ft, int pos, u_int16_t data){
+void fatTableWrite(FatTable ft, int pos, uint16_t data){
     //fatTablePrint(ft);
     ft->table[pos] = data;
     if(ft->save_count == 0){

@@ -77,11 +77,9 @@ int clusterGetSize(DirEntry Entry){
 
 /*################################### Setters ############################*/
 void clusterSetFileName(DirEntry Entry, char* fileName){
-    printf("CHEGOU %s \n", fileName);
     //strcpy(Entry->filename[i],fileName);
     int i = 0;
     for (i = 0; i < strlen(fileName); i++){
-        printf("%c \n", (uint8_t)fileName[i]);
         Entry->filename[i] = (uint8_t)fileName[i];
     }
 }
@@ -149,14 +147,15 @@ DirEntry* clusterReadDirClusters(int position){
 */ 
 int clusterWriteDataCluster(int pos, uint8_t* dataToWrite){
     FILE *fat_part = fopen("fat.part", "rb+");
-    
+    uint8_t* emptyData = NULL;
+
     if(fat_part == NULL){
         printf("\n É importante criar um arquivo antes de abri-lo \n");
         return -1;
     }
 
     if(dataToWrite == NULL){   
-        uint8_t* emptyData = malloc(sizeof(uint8_t) * CLUSTER_SIZE);
+        emptyData = malloc(sizeof(uint8_t) * CLUSTER_SIZE);
         memset(emptyData, 0, CLUSTER_SIZE);
         dataToWrite = emptyData;
     }
@@ -167,19 +166,23 @@ int clusterWriteDataCluster(int pos, uint8_t* dataToWrite){
 
     fclose(fat_part);
 
+    free(dataToWrite);
+    
+
     return 0;
 }
 
 int clusterWriteDirCluster(int pos, DirEntry* dataToWrite){
     FILE *fat_part = fopen("fat.part", "rb+");
-    
+    DirEntry* emptyDir = NULL;
+
     if(fat_part == NULL){
         printf("\n É importante criar um arquivo antes de abri-lo \n");
         return -1;
     }
 
     if(dataToWrite == NULL){
-        DirEntry* emptyDir = malloc(sizeof(struct dirEntry) * 32);
+        emptyDir = malloc(sizeof(struct dirEntry) * 32);
         memset(emptyDir, 0, 32 * clusterDirEntrySize());
         dataToWrite = emptyDir;
     }
@@ -189,6 +192,9 @@ int clusterWriteDirCluster(int pos, DirEntry* dataToWrite){
     fwrite(dataToWrite, clusterDirEntrySize(), 32, fat_part);
 
     fclose(fat_part);
+
+    free(dataToWrite);
+    
 
     return 0;
 
